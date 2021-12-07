@@ -1,9 +1,13 @@
 <template>
-  <el-form-item :label="config.label">
+  <el-form-item
+    @click.native="handleClickItem"
+    :class="config.active ? 'cro-form-item on' :'cro-form-item off' "
+    :label="config.label"
+  >
     <el-input
       :size="formConfig.size"
       v-if="config.type === 'input'"
-      v-model="config.value"
+      :value="config.value"
     ></el-input>
     <el-input
       :size="formConfig.size"
@@ -16,17 +20,28 @@
       v-else-if="config.type === 'counter'"
       v-model="config.value"
     ></el-input-number>
+    <el-radio-group
+      :size="formConfig.size"
+      v-else-if="config.type === 'radio'"
+      v-model="config.value"
+    >
+      <el-radio
+        v-for="i of config.options"
+        :key="i.values"
+        :value="i.value"
+      >{{ i.label }}</el-radio>
+    </el-radio-group>
     <el-select
       :size="formConfig.size"
       v-if="config.type=== 'select'"
       v-model="config.value"
     >
       <el-option
-        v-for="item of config.selectOptions"
+        v-for="item of config.options"
         :key="item.id"
         :label="item.label"
         :value="item.value"
-      >
+      >{{ item.label }}
       </el-option>
     </el-select>
     <el-time-select
@@ -74,9 +89,13 @@
 </template>
 
 <script>
+// import Clickoutside from 'element-ui/src/utils/clickoutside'
 import { mapGetters } from 'vuex'
 export default {
   name: 'cro-form-item',
+  // directives: {
+  //   Clickoutside
+  // },
   props: {
     config: {
       type: Object,
@@ -88,9 +107,46 @@ export default {
   },
   mounted () {
     console.error(this.formConfig)
+  },
+  methods: {
+    handleClickItem () {
+      if (this.config.active) return
+      this.config.active = true
+      const list = this.list.map(i => {
+        if (i.id === this.config.id) i.active = true
+        return i
+      })
+      this.$store.commit('setList', list)
+    }
+    // handleClickout () {
+    //   if (!this.config.active) return
+    //   this.config.active = true
+    //   const list = this.list.map(i => {
+    //     if (i.id === this.config.id) i.active = false
+    //     return i
+    //   })
+    //   this.$store.commit('setList', list)
+    // }
   }
 }
 </script>
 
-<style>
+<style lang="scss" scoped>
+.cro-form-item {
+  padding: 8px 12px;
+  &:hover {
+    border: 2px dashed #409eff;
+    // outline: 2px solid #409eff;
+    background-color: rgba(#409eff, 0.3);
+  }
+}
+.on {
+  border: 2px dashed #409eff;
+  // outline: 2px solid #409eff;
+  background-color: rgba(#409eff, 0.3);
+}
+.off {
+  border: 2px solid transparent;
+  outline: 2px solid transparent;
+}
 </style>

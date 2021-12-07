@@ -79,7 +79,7 @@ export default {
     const orderList = this.list.sort((pre, cur) => pre.newIndex - cur.newIndex)
     return (
       <div class="cro-form">
-        <el-form labelWidth={ this.formConfig.labelWidth + 'px'}>
+        <el-form style={{ width: this.formConfig.formWidth }} labelPosition={ this.formConfig.labelPosition} labelWidth={ this.formConfig.labelWidth + 'px'}>
           { orderList.map(item => {
             return (<cro-form-item config={ item }/>)
           }) }

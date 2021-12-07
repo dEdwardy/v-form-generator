@@ -36,9 +36,11 @@
         group="cmp"
         @add="handleAdd"
         style="width:100%;height:100%"
-        v-model="arr"
+        v-model="list"
       >
+        <!-- <vue-editor> -->
         <cro-form :list="arr.map( i =>({...i,type:i.value,value:'a'}))"></cro-form>
+        <!-- </vue-editor> -->
       </draggable>
     </div>
     <div class="form-options">
@@ -49,7 +51,36 @@
         <el-tab-pane
           label="字段属性"
           name="fieldAttrs"
-        >字段属性</el-tab-pane>
+        >
+          <el-form v-if="curActive" :model="curActive">
+            <el-form-item label="标题">
+              <el-input v-model="curActive.label"></el-input>
+            </el-form-item>
+            <el-form-item label="宽度">
+              <el-input v-model="curActive.width"></el-input>
+            </el-form-item>
+            <el-form-item label="标签宽度">
+              <el-input-number
+                v-model="curActive.labelWidth"
+                :step="10"
+              ></el-input-number>
+            </el-form-item>
+            <el-form-item label="占位内容">
+              <el-input v-model="curActive.width"></el-input>
+            </el-form-item>
+            <el-form-item label="默认值">
+              <el-input v-model="curActive.defaultValue"></el-input>
+            </el-form-item>
+            <el-form-item  label-position="top" label="校验">
+              <!-- <el-radio-group v-model="curActive.labelPosition">
+                <el-radio-button label="left"></el-radio-button>
+                <el-radio-button label="right"></el-radio-button>
+                <el-radio-button label="top"></el-radio-button>
+              </el-radio-group> -->
+              <cro-checkbox v-model="curActive.rules"></cro-checkbox>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
         <el-tab-pane
           label="表单属性"
           name="formAttrs"
@@ -58,21 +89,24 @@
             <el-form-item label="表单宽度">
               <el-input v-model="formSettings.formWidth"></el-input>
             </el-form-item>
-            <el-form-item  label="表单标签宽度">
-              <el-input-number v-model="formSettings.labelWidth" :step="10"></el-input-number>
+            <el-form-item label="表单标签宽度">
+              <el-input-number
+                v-model="formSettings.labelWidth"
+                :step="10"
+              ></el-input-number>
             </el-form-item>
-            <el-form-item  label="标签对齐方式">
+            <el-form-item label="标签大小">
               <el-radio-group v-model="formSettings.size">
                 <el-radio-button label="medium"></el-radio-button>
                 <el-radio-button label="small"></el-radio-button>
                 <el-radio-button label="mini"></el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item>
+            <el-form-item label="标签对齐方式">
               <el-radio-group v-model="formSettings.labelPosition">
-                <el-radio-button label="medium"></el-radio-button>
-                <el-radio-button label="small"></el-radio-button>
-                <el-radio-button label="mini"></el-radio-button>
+                <el-radio-button label="left"></el-radio-button>
+                <el-radio-button label="right"></el-radio-button>
+                <el-radio-button label="top"></el-radio-button>
               </el-radio-group>
             </el-form-item>
           </el-form>
@@ -83,12 +117,18 @@
 </template>
 
 <script>
+// import { VueEditor } from 'vue2-editor'
+import { generateId } from '@/utils'
+import { mapGetters } from 'vuex'
 import draggable from 'vuedraggable'
 import CroForm from '@/components/cro-form.vue'
+import CroCheckbox from '@/components/cro-checkbox.vue'
 export default {
   components: {
     draggable,
-    CroForm
+    CroForm,
+    CroCheckbox
+    // VueEditor
   },
   data () {
     return {
@@ -109,7 +149,7 @@ export default {
               value: 'counter'
             },
             {
-              label: 'radio',
+              label: '单选框组',
               value: 'radio'
             },
             {
@@ -186,6 +226,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['list', 'curActive']),
     formItem () {
       return Object.values(this.cmp).map(obj => {
         console.log(obj.value)
@@ -203,19 +244,68 @@ export default {
   },
   methods: {
     handleClickCmp (item) {
+      console.log(item)
       this.arr.push({
         ...item,
         type: item.value,
-        value: 'a'
+        value: ''
       })
     },
     handleMove () {
       return true
     },
+    handleCmpDefault (item) {
+      console.warn(item)
+      const cmps = {
+        input: '',
+        textarea: '',
+        counter: '',
+        radio: {
+          options: [{ label: '1', value: '1' }, { label: '2', value: '2' }, { label: '3', value: '3' }]
+        },
+        checkbox: {
+          options: [{ label: '1', value: '1' }, { label: '2', value: '2' }, { label: '3', value: '3' }]
+        },
+        select: {
+          options: [{ label: '1', value: '1' }, { label: '2', value: '2' }, { label: '3', value: '3' }]
+        },
+        timepicker: '',
+        datepicker: '',
+        rate: '',
+        colorpicker: '',
+        switch: '',
+        slider: '',
+        words: '',
+        html: '',
+        button: '',
+        link: ''
+      }
+      const id = generateId()
+      if (cmps[item.value]) {
+        return {
+          ...item,
+          id,
+          active: true,
+          ...cmps[item.value]
+        }
+      }
+      return {
+        ...item,
+        active: true,
+        id
+      }
+    },
     handleAdd (e) {
       console.log(e, e.newIndex, e.item.innerText)
       const cur = this.formItem.filter(i => i.label === e.item.innerText)[0]
-      this.arr.push(cur)
+      const res = this.handleCmpDefault(cur)
+      this.arr = this.arr.map(i => {
+        if (i.active) i.active = false
+        return i
+      })
+      this.arr.splice(e.newIndex, 0, res)
+      // console.log(res, this.arr)
+      this.$store.commit('setList', this.arr)
     }
   }
 }
@@ -242,6 +332,7 @@ export default {
         font-size: 13px;
       }
       .section-content {
+        overflow: hidden;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
@@ -250,11 +341,12 @@ export default {
     }
   }
   .main {
+    padding-top: 12px;
     flex: 1;
     height: 100%;
   }
   .form-options {
-    margin: 0 12px;
+    margin: 0 24px;
     width: 300px;
     height: 100%;
   }
